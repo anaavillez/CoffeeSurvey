@@ -10,7 +10,7 @@ namespace WiredBrainCoffeeSurveys.Reports
         {
 
             GenerateWinnerEmails();
-            GenerateTaskReports();
+            GenerateTasksReport();
             GenerateCommentsReport();
 
         }
@@ -39,58 +39,54 @@ namespace WiredBrainCoffeeSurveys.Reports
 
         }
 
-        public static void GenerateTaskReports()
+        public static void GenerateTasksReport()
         {
             var tasks = new List<string>();
 
-            // Calculated values
             double responseRate = Q1Results.NumberResponded / Q1Results.NumberSurveyed;
-            double overallScore = (Q1Results.FoodScore + Q1Results.PriceScore + Q1Results.ServiceScore + Q1Results.CoffeeScore) / 4;
+            double overallScore = (Q1Results.ServiceScore + Q1Results.CoffeeScore + Q1Results.FoodScore + Q1Results.PriceScore) / 4;
 
-
-            //If Statment
+            //If statment
             if (Q1Results.CoffeeScore < Q1Results.FoodScore)
             {
-                tasks.Add("Investigate coffee recipes and ingrediens.");
+                tasks.Add("Investigate coffee recipes and ingredients.");
             }
 
-            //If else statment
+            // If else statment
             if (overallScore > 8.0)
             {
-                tasks.Add("Work with leadership to reward staff!");
+                tasks.Add("Work with leadership to reward staff");
             }
             else
             {
-                tasks.Add("Work with employees to find out how to improve sales!");
+                tasks.Add("Work with employees for improvement ideas.");
             }
 
-
-            // Else if statment
+            //Else if statment
             if (responseRate < .33)
             {
-                tasks.Add("Research options to improve response rate");
+                tasks.Add("Research options to improve response rate.");
             }
             else if (responseRate > .33 && responseRate < .66)
             {
-                tasks.Add("Reward participants with a cuppon for a free coffee!");
+                tasks.Add("Reward participants with free coffee coupon.");
             }
             else
             {
-                tasks.Add("Reward participants with a discount cuppon");
+                tasks.Add("Rewards participants with discount coffee coupon.");
             }
 
-
-            //Switch Statment
+            //Switch statment
             switch (Q1Results.AreaToImprove)
             {
                 case "RewardsProgram":
                     tasks.Add("Revisit the rewards deals.");
                     break;
                 case "Cleanliness":
-                    tasks.Add("Contact the cleaning vendor");
+                    tasks.Add("Contact the cleaning vendor.");
                     break;
                 case "MobileApp":
-                    tasks.Add("Contact consulting firm about app.");
+                    tasks.Add("Contact the consulting firm about app.");
                     break;
                 default:
                     tasks.Add("Investigate individual comments for ideas.");
@@ -98,11 +94,12 @@ namespace WiredBrainCoffeeSurveys.Reports
             }
 
             Console.WriteLine(Environment.NewLine + "Tasks Output:");
-            foreach(var task in tasks)
+            foreach (var task in tasks)
+            {
+                Console.WriteLine(task);
+            }
 
             File.WriteAllLines("TasksReport.csv", tasks);
-
-
         }
 
         public static void GenerateCommentsReport()
