@@ -1,35 +1,76 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
+using System.Text.Json;
+
 
 namespace WiredBrainCoffeeSurveys.Reports
+   
 {
     class Program
     {
+
         static void Main(string[] args)
         {
 
-            GenerateWinnerEmails();
-            GenerateTasksReport();
-            GenerateCommentsReport();
+            bool quitApp = false;
+
+            do
+            {
+                Console.WriteLine("Please specify a report to run( rewards, comments, tasks, quit):");
+                var selectedReport = Console.ReadLine();
+
+                Console.WriteLine("Please specify which quarter of data: (q1, q2)");
+                var selectedData = Console.ReadLine();
+
+                var surveyResults = JsonConvert.DeserializeObject<SurveyResults>
+                    (File.ReadAllText($"data/{selectedData}.json"));
+
+                switch (selectedReport)
+                {
+                    case "rewards":
+                        GenerateWinnerEmails(surveyResults);
+                        break;
+                    case "comments":
+                        GenerateCommentsReport(surveyResults);
+                        break;
+                    case "tasks":
+                        GenerateTasksReport(surveyResults);
+                        break;
+                    case "quit":
+                        quitApp = true;
+                        break;
+                    default:
+                        Console.WriteLine("Sorry, that's not a valid option.");
+                        break;
+
+                }
+
+                Console.WriteLine();
+
+            }
+            while (!quitApp);
+
 
         }
 
-        public static void GenerateWinnerEmails()
+        public static void GenerateWinnerEmails(SurveyResults results)
         {
             var selectedEmails = new List<string>();
             int counter = 0;
 
             Console.WriteLine(Environment.NewLine + "Selected Winners Output:");
             //While Loop:
-            while (selectedEmails.Count < 2 && counter < Q1Results.Responses.Count)
+            while (selectedEmails.Count < 2 && counter < results.Responses.Count)
             {
-                var currentItem = Q1Results.Responses[counter];
+                var currentItem = results.Responses[counter];
 
                 if (currentItem.FavoriteProduct == "Cappucino")
                 {
-                    selectedEmails.Add(currentItem.EmailAddress);
-                    Console.WriteLine(currentItem.EmailAddress);
+                    selectedEmails.Add(currentItem.emailAdress);
+                    Console.WriteLine(currentItem.emailAdress);
                 }
                 counter++;
             }
@@ -39,59 +80,43 @@ namespace WiredBrainCoffeeSurveys.Reports
 
         }
 
-        public static void GenerateTasksReport()
+        public static void GenerateTasksReport(SurveyResults results)
         {
             var tasks = new List<string>();
 
-            double responseRate = Q1Results.NumberResponded / Q1Results.NumberSurveyed;
-            double overallScore = (Q1Results.ServiceScore + Q1Results.CoffeeScore + Q1Results.FoodScore + Q1Results.PriceScore) / 4;
+            double responseRate = results.NumberResponded / results.NumberSurveyed;
+            double overallScore = (results.ServiceScore + results.CoffeeScore + results.FoodScore + results.PriceScore) / 4;
 
             //If statment
-            if (Q1Results.CoffeeScore < Q1Results.FoodScore)
+            if (results.CoffeeScore < results.FoodScore)
             {
                 tasks.Add("Investigate coffee recipes and ingredients.");
             }
 
             // If else statment
-            if (overallScore > 8.0)
-            {
-                tasks.Add("Work with leadership to reward staff");
-            }
-            else
-            {
-                tasks.Add("Work with employees for improvement ideas.");
-            }
+            var newTask = overallScore > 8.0 ? "Work with leadership to reward staff" : "Work with employees for improvement ideas";
+            tasks.Add(newTask);
 
-            //Else if statment
-            if (responseRate < .33)
+           // !!!!!!!!!!!!!!This are two different ways to right!!!!!!!!!!!!!!!!!
+            //If else statment
+            tasks.Add(responseRate switch
             {
-                tasks.Add("Research options to improve response rate.");
-            }
-            else if (responseRate > .33 && responseRate < .66)
-            {
-                tasks.Add("Reward participants with free coffee coupon.");
-            }
-            else
-            {
-                tasks.Add("Rewards participants with discount coffee coupon.");
-            }
+                var rate when rate < .33 => "Research options to improve response rate.",
+                var rate when rate > .33 && rate < .66 => "Reward participants with free coffee cuppon.",
+                var rate when rate > .66 => "Rewards participants with discount coffee coupon."
+            });
+
 
             //Switch statment
-            switch (Q1Results.AreaToImprove)
+            tasks.Add(results.AreaToImprove switch
             {
-                case "RewardsProgram":
-                    tasks.Add("Revisit the rewards deals.");
-                    break;
-                case "Cleanliness":
-                    tasks.Add("Contact the cleaning vendor.");
-                    break;
-                case "MobileApp":
-                    tasks.Add("Contact the consulting firm about app.");
-                    break;
-                default:
-                    tasks.Add("Investigate individual comments for ideas.");
-                    break;
-            }
+                "RewardsProgram" => "Revisit rewards deals.",
+                "CleanlinessProgram" => "Contact the cleaning vendor.",
+                "MobileApp" => "Contact the consulting firm about app.",
+                _ => "Investigate individual comments for ideas."
+            });
+         
+          
 
             Console.WriteLine(Environment.NewLine + "Tasks Output:");
             foreach (var task in tasks)
@@ -102,31 +127,31 @@ namespace WiredBrainCoffeeSurveys.Reports
             File.WriteAllLines("TasksReport.csv", tasks);
         }
 
-        public static void GenerateCommentsReport()
+        public static void GenerateCommentsReport(SurveyResults results)
             {
 
             var comments = new List<string>();
 
             Console.WriteLine(Environment.NewLine + "Selected comments Output:");
             //For Loop
-            for (var i = 0; i < Q1Results.Responses.Count; i++)
+            for (var i = 0; i < results.Responses.Count; i++)
                 {
-                    var currentResponse = Q1Results.Responses[i];
+                    var currentResponse = results.Responses[i];
 
                     if (currentResponse.WouldRecommend < 7.0)
                     {
-                        Console.WriteLine(currentResponse.Comments);
-                        comments.Add(currentResponse.Comments);
+                        Console.WriteLine(currentResponse.comments);
+                        comments.Add(currentResponse.comments);
                     }
                 }
 
                 //foreach loop
-                foreach (var response in Q1Results.Responses)
+                foreach (var response in results.Responses)
                 {
-                    if (response.AreaToImprove == Q1Results.AreaToImprove)
+                    if (response.AreaToImprove == results.AreaToImprove)
                     {
-                        Console.WriteLine(response.Comments);
-                    comments.Add(response.Comments);
+                        Console.WriteLine(response.comments);
+                    comments.Add(response.comments);
                     }
                 }
 
